@@ -50,3 +50,54 @@ def check_zip(filepath):
             print(f"Opening zip file, {filepath}, produced Exception: {e}")
             result = (False, e)
             return result
+
+
+if __name__ == "__main__":
+    args = sys.argv
+    len_args = len(args)
+    valid_arguments = ['-p', '--pdf', '-z', '--zip']
+    print(f"args: {args}")
+
+    help_txt = "Usage: main.py [-p|--pdf] [-z|--zip] directory"
+
+    if len_args == 1:
+        print(f"corrupt_file_finder: At least one file types and the name of the target directory must be specified.")
+        print(f"{help_txt}")
+        exit(1)
+    elif len_args == 2:
+        print(f"corrupt_file_finder: At least one file types must be specified in the arguments")
+        print(f"{help_txt}")
+        exit(1)
+    elif args[-1] in valid_arguments:
+        print(f"corrupt_file_finder: A target directory must be specified.")
+        print(f"{help_txt}")
+        exit(1)
+
+    # Identify target directory and remove it from arguments.
+    target_dir = args[-1]
+    args.pop(-1)
+    print(f"target_dir: {target_dir}")
+
+    # Setting up file types to examine.
+    file_types = []
+
+    for idx, arg in enumerate(args):
+        match arg:
+            case 'main.py':
+                continue
+            case '-p':
+                file_types.append('pdf')
+            case '--pdf':
+                file_types.append('pdf')
+            case '-z':
+                file_types.append('zip')
+            case '--zip':
+                file_types.append('zip')
+            case _:
+                print(f"corrupt_file_finder: Invalid argument {args[idx]}")
+                print(f"{help_txt}")
+                exit(1)
+
+    # Remove duplicate file types.
+    file_types = list(set(file_types))
+    print(f"file_types: {file_types}")
