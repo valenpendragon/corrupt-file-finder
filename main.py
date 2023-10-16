@@ -3,6 +3,7 @@ import pypdf
 import sys
 import os
 import glob
+import pathlib
 
 
 def check_pdf(filepath):
@@ -52,7 +53,22 @@ def check_zip(filepath):
             return result
 
 
+def get_files_from_target_dir(target_dir, file_types) -> list:
+    """
+    This function requires a filepath and list of filetypes as strings of suffixes.
+    :param target_dir: filepath
+    :param file_types: list of str, e.g. 'pdf', 'zip'
+    :return: list of filepaths
+    """
+    pass
+
+
 if __name__ == "__main__":
+    """This program has the following exit codes:
+    1: invalid command line usage
+    2: target directory does not exist or is not a directory
+    3: target directory is not readable.
+    """
     args = sys.argv
     len_args = len(args)
     valid_arguments = ['-p', '--pdf', '-z', '--zip']
@@ -101,3 +117,14 @@ if __name__ == "__main__":
     # Remove duplicate file types.
     file_types = list(set(file_types))
     print(f"file_types: {file_types}")
+
+    # Check target directory to see if it exists and is readable.
+    if not os.path.exists(target_dir):
+        print(f"corrupt_file_finder: target directory, {target_dir}, does not exist.")
+        exit(2)
+    if not os.path.isdir(target_dir):
+        print(f"corrupt_file_finder: target directory, {target_dir}, is not a directory.")
+        exit(2)
+
+    file_list = get_files_from_target_dir(target_dir, file_types)
+    print(f"file_list: {file_list}")
