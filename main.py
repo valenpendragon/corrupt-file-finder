@@ -60,7 +60,11 @@ def get_files_from_target_dir(target_dir, file_types) -> list:
     :param file_types: list of str, e.g. 'pdf', 'zip'
     :return: list of filepaths
     """
-    pass
+    file_list = []
+    for file_type in file_types:
+        search_str = f"{target_dir}/*.{file_type}"
+        file_list.extend(glob.glob(search_str))
+    return file_list
 
 
 if __name__ == "__main__":
