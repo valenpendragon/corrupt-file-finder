@@ -71,18 +71,36 @@ def get_files_from_target_dir(target_dir, file_types, recurse=False) -> list:
     return file_list
 
 
+def write_report_to_disk(results):
+    """
+    This function requires a list of tuples in the form (filepath, bool, error) where
+    filepath is the path to the file testes; bool is True if the file is not corrupt,
+    False if corrupt; and error is None for files that are not corrupt or a str containing
+    the first major error encountered while testing the file. These tuples are used to
+    write the report to disk in the same fashion as it was written to stdout. Using this
+    option will not suppress the messages indicating the file currently being tested, but
+    it will suppress the final report. It returns True if the report write was successful,
+    False otherwise.
+    :param results: list of tuples (filepath, bool, error|None)
+    :return: bool, True if the file write occurred without errors, False otherwise
+    """
+    pass
+
+
 if __name__ == "__main__":
     """This program has the following exit codes:
     1: invalid command line usage
     2: target directory does not exist or is not a directory
-    3: target directory is not readable.
+    3: target directory is not readable
+    4: report file creation failed
     """
     args = sys.argv
     len_args = len(args)
-    valid_arguments = ['-p', '--pdf', '-z', '--zip', '-r', '--recurse']
-    print(f"args: {args}")
+    valid_arguments = ['-p', '--pdf', '-z', '--zip', '-r', '--recurse', '--report-file']
+    # print(f"args: {args}")
 
-    help_txt = "Usage: main.py [-p|--pdf] [-z|--zip] [-r|--recurse] directory"
+    help_txt = f"Usage: main.py [-p|--pdf] [-z|--zip] [-r|--recurse] [--report-file filepath] directory\n" \
+               f"Note: report file arguments must appear after file type arguments."
 
     if len_args == 1:
         print(f"corrupt_file_finder: At least one file types and the name of the target directory must be specified.")
@@ -97,6 +115,20 @@ if __name__ == "__main__":
         print(f"{help_txt}")
         exit(1)
 
+    if '--report-file' in args:
+        if args[-3] != '--report-file':
+            print(f"corrupt_file_finder: report-file argument must appear after file type arguments.")
+            print(f"{help_txt}")
+            exit(1)
+        elif args[-3] == '--report-file' and args[-2] in valid_arguments:
+            print(f"corrupt_file_finder: A filepath for the report file must be specified after the argument.")
+            print(f"{help_txt}")
+            exit(1)
+        elif args[-2] == '--report-file':
+            print(f"corrupt_file_finder: A filepath for the report file must be specified after the argument.")
+            print(f"{help_txt}")
+            exit(1)
+
     # Identify target directory and remove it from arguments.
     target_dir = args[-1]
     args.pop(-1)
@@ -105,6 +137,16 @@ if __name__ == "__main__":
     # Setting up file types to examine and default flags.
     file_types = []
     recurse = False
+    write_report = False
+
+    # Checking for report-file arguments. They will be at -2 and -1.
+    if args[-2] == '--report-file':
+        report_file = args.pop(-1)
+        # Remove the report-file argument, which is now at -1.
+        args.pop(-1)
+        write_report = True
+        # print(f"report_file: {report_file}. write_report: {write_report}")
+        # print(f"args: {args}")
 
     for idx, arg in enumerate(args):
         match arg:
@@ -121,9 +163,14 @@ if __name__ == "__main__":
             case '-r'| '--recurse':
                 recurse = True
             case _:
-                print(f"corrupt_file_finder: Invalid argument {args[idx]}")
-                print(f"{help_txt}")
-                exit(1)
+                if arg == '--report-file':
+                    print(f"corrupt_file_finder: report-file arguments must appear after file type arguments.")
+                    print(f"{help_txt}")
+                    exit(1)
+                else:
+                    print(f"corrupt_file_finder: Invalid argument {args[idx]}")
+                    print(f"{help_txt}")
+                    exit(1)
 
     # Remove duplicate file types.
     file_types = list(set(file_types))
@@ -157,11 +204,15 @@ if __name__ == "__main__":
 
     # Printing results to stdout.
     list_file_types = [f" {file_type}" for file_type in file_types]
-    print(f"corrupt_file_finder: Here are the findings for supported file types,{list_file_types}:")
-    for file, result, error_msg in test_results:
-        if result:
-            print(f"{file}\tusable\tNo errors found")
-        else:
-            print(f"{file}\tcorrupted\t{error_msg}")
-    print("corrupt_file_finder: Report completed.")
+    if write_report:
+        print(f"corrupt_file_finder: Writing report to {report_file}")
+        write_report_to_disk(test_results)
+    else:
+        print(f"corrupt_file_finder: Here are the findings for supported file types,{list_file_types}:")
+        for file, result, error_msg in test_results:
+            if result:
+                print(f"{file}\tusable\tNo errors found")
+            else:
+                print(f"{file}\tcorrupted\t{error_msg}")
+        print("corrupt_file_finder: Report completed.")
 
