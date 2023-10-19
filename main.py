@@ -53,7 +53,7 @@ def check_zip(filepath):
             return result
 
 
-def get_files_from_target_dir(target_dir, file_types) -> list:
+def get_files_from_target_dir(target_dir, file_types, recurse=False) -> list:
     """
     This function requires a filepath and list of filetypes as strings of suffixes.
     :param target_dir: filepath
@@ -62,8 +62,12 @@ def get_files_from_target_dir(target_dir, file_types) -> list:
     """
     file_list = []
     for file_type in file_types:
-        search_str = f"{target_dir}/*.{file_type}"
-        file_list.extend(glob.glob(search_str))
+        if recurse:
+            search_str = f"{target_dir}/**/*.{file_type}"
+            file_list.extend(glob.glob(search_str, recursive=True))
+        else:
+            search_str = f"{target_dir}/*.{file_type}"
+            file_list.extend(glob.glob(search_str))
     return file_list
 
 
@@ -75,10 +79,10 @@ if __name__ == "__main__":
     """
     args = sys.argv
     len_args = len(args)
-    valid_arguments = ['-p', '--pdf', '-z', '--zip']
-    # print(f"args: {args}")
+    valid_arguments = ['-p', '--pdf', '-z', '--zip', '-r', '--recurse']
+    print(f"args: {args}")
 
-    help_txt = "Usage: main.py [-p|--pdf] [-z|--zip] directory"
+    help_txt = "Usage: main.py [-p|--pdf] [-z|--zip] [-r|--recurse] directory"
 
     if len_args == 1:
         print(f"corrupt_file_finder: At least one file types and the name of the target directory must be specified.")
@@ -98,8 +102,9 @@ if __name__ == "__main__":
     args.pop(-1)
     # print(f"target_dir: {target_dir}")
 
-    # Setting up file types to examine.
+    # Setting up file types to examine and default flags.
     file_types = []
+    recurse = False
 
     for idx, arg in enumerate(args):
         match arg:
@@ -113,6 +118,8 @@ if __name__ == "__main__":
                 file_types.append('zip')
             case '--zip':
                 file_types.append('zip')
+            case '-r'| '--recurse':
+                recurse = True
             case _:
                 print(f"corrupt_file_finder: Invalid argument {args[idx]}")
                 print(f"{help_txt}")
@@ -130,8 +137,8 @@ if __name__ == "__main__":
         print(f"corrupt_file_finder: target directory, {target_dir}, is not a directory.")
         exit(2)
 
-    file_list = get_files_from_target_dir(target_dir, file_types)
-    # print(f"file_list: {file_list}")
+    file_list = get_files_from_target_dir(target_dir, file_types, recurse)
+    print(f"file_list: {file_list}")
 
     # Testing the files. A list of tuples is created for the output.
     test_results = []
