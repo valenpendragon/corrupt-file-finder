@@ -24,7 +24,7 @@ def check_pdf(filepath):
                 result = (False, "Bad Metadata")
             return result
         except Exception as e:
-            print(f"Opening PDF, {filepath}, produced Exception: {e}")
+            # print(f"Opening PDF, {filepath}, produced Exception: {e}")
             result = (False, e)
             return result
 
@@ -71,7 +71,7 @@ def get_files_from_target_dir(target_dir, file_types, recurse=False) -> list:
     return file_list
 
 
-def write_report_to_disk(results):
+def write_report_to_disk(report_file, results):
     """
     This function requires a list of tuples in the form (filepath, bool, error) where
     filepath is the path to the file testes; bool is True if the file is not corrupt,
@@ -80,11 +80,22 @@ def write_report_to_disk(results):
     write the report to disk in the same fashion as it was written to stdout. Using this
     option will not suppress the messages indicating the file currently being tested, but
     it will suppress the final report. It returns True if the report write was successful,
-    False otherwise.
+    False otherwise. The format of the file is CSV with delimiter semi-colon.
+    :param report_file: filepath
     :param results: list of tuples (filepath, bool, error|None)
     :return: bool, True if the file write occurred without errors, False otherwise
     """
-    pass
+    try:
+        with open(report_file, "w") as fp:
+            fp.write(f"Filepath;Usable?;Known Errors\n")
+            for file, result, error_msg in results:
+                if result:
+                    fp.write(f"{file};usable;No errors found\n")
+                else:
+                    fp.write(f"{file};corrupted;{error_msg}\n")
+    except OSError:
+        return False
+    return True
 
 
 if __name__ == "__main__":
@@ -130,7 +141,9 @@ if __name__ == "__main__":
             exit(1)
 
     # Identify target directory and remove it from arguments.
-    target_dir = args[-1]
+    # Removing any extraneous double quotation marks that might carry over
+    # to the actual string stored in target_dir.
+    target_dir = args[-1].replace('"', '')
     args.pop(-1)
     # print(f"target_dir: {target_dir}")
 
@@ -185,7 +198,7 @@ if __name__ == "__main__":
         exit(2)
 
     file_list = get_files_from_target_dir(target_dir, file_types, recurse)
-    print(f"file_list: {file_list}")
+    # print(f"file_list: {file_list}")
 
     # Testing the files. A list of tuples is created for the output.
     test_results = []
@@ -206,7 +219,10 @@ if __name__ == "__main__":
     list_file_types = [f" {file_type}" for file_type in file_types]
     if write_report:
         print(f"corrupt_file_finder: Writing report to {report_file}")
-        write_report_to_disk(test_results)
+        report = write_report_to_disk(report_file, test_results)
+        if not report:
+            print(f"corrupt_file_finder: Could not write report to {report_file}")
+            exit(4)
     else:
         print(f"corrupt_file_finder: Here are the findings for supported file types,{list_file_types}:")
         for file, result, error_msg in test_results:
@@ -215,4 +231,3 @@ if __name__ == "__main__":
             else:
                 print(f"{file}\tcorrupted\t{error_msg}")
         print("corrupt_file_finder: Report completed.")
-
